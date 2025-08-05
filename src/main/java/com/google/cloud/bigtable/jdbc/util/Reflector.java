@@ -27,33 +27,33 @@ import java.util.function.IntFunction;
 
 public class Reflector {
   public static <T> T createVerifiedInstance(
-    String fullyQualifiedClassName, Class<T> requiredClass, Object... constructorArgs) {
+      String fullyQualifiedClassName, Class<T> requiredClass, Object... constructorArgs) {
     try {
       Class<?> clazz = Class.forName(fullyQualifiedClassName);
       Object result =
-        clazz
-          .getDeclaredConstructor(
-            Arrays.stream(constructorArgs)
-              .map(Object::getClass)
-              .toArray((IntFunction<Class<?>[]>) Class[]::new))
-          .newInstance(constructorArgs);
+          clazz
+              .getDeclaredConstructor(
+                  Arrays.stream(constructorArgs)
+                      .map(Object::getClass)
+                      .toArray((IntFunction<Class<?>[]>) Class[]::new))
+              .newInstance(constructorArgs);
       if (!requiredClass.isInstance(result)) {
         throw new IllegalArgumentException(
-          String.format(
-            "% does not implement %s",
-            clazz.getCanonicalName(), requiredClass.getCanonicalName()));
+            String.format(
+                "% does not implement %s",
+                clazz.getCanonicalName(), requiredClass.getCanonicalName()));
       }
       return (T) result;
     } catch (ClassNotFoundException
-             | InstantiationException
-             | IllegalAccessException
-             | InvocationTargetException
-             | NoSuchMethodException e) {
+        | InstantiationException
+        | IllegalAccessException
+        | InvocationTargetException
+        | NoSuchMethodException e) {
       throw new IllegalArgumentException(
-        String.format(
-          "Could not instantiate class [%s], implementing %s",
-          fullyQualifiedClassName, requiredClass.getCanonicalName()),
-        e);
+          String.format(
+              "Could not instantiate class [%s], implementing %s",
+              fullyQualifiedClassName, requiredClass.getCanonicalName()),
+          e);
     }
   }
 
@@ -70,7 +70,7 @@ public class Reflector {
       return result;
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalArgumentException(
-        "Serialization test of " + obj.getClass().getCanonicalName() + " failed", e);
+          "Serialization test of " + obj.getClass().getCanonicalName() + " failed", e);
     }
   }
 }

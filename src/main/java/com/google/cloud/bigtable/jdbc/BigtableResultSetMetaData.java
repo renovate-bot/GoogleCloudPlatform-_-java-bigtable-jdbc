@@ -3,7 +3,6 @@ package com.google.cloud.bigtable.jdbc;
 import com.google.cloud.bigtable.data.v2.models.sql.ColumnMetadata;
 import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
 import com.google.cloud.bigtable.jdbc.util.SqlTypeEnum;
-
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;

@@ -22,7 +22,6 @@ import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
 import com.google.cloud.bigtable.jdbc.util.Parameter;
 import com.google.cloud.bigtable.jdbc.util.SqlParser;
 import com.google.cloud.bigtable.jdbc.util.SqlTypeEnum;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -60,7 +59,8 @@ import java.util.Map;
 public class BigtablePreparedStatement implements PreparedStatement {
   private final BigtableDataClient client;
   private final String sql;
-  private com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement cachedPreparedStatement = null;
+  private com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement cachedPreparedStatement =
+      null;
   private boolean isCached = false;
   private boolean isClosed = false;
   private final List<ResultSet> resultSets = new ArrayList<>();
@@ -69,6 +69,7 @@ public class BigtablePreparedStatement implements PreparedStatement {
 
   private final Map<Integer, Parameter> parameters = new HashMap<>();
   private static final String PARAM_PREFIX = "param";
+
   public BigtablePreparedStatement(String sql, BigtableDataClient client) {
     this.sql = sql;
     this.client = client;
@@ -120,8 +121,12 @@ public class BigtablePreparedStatement implements PreparedStatement {
     Parameter existing = parameters.get(parameterIndex);
 
     if (isCached && existing != null && !existing.getTypeLabel().equals(type)) {
-      throw new SQLException("Cannot change parameter type after statement is cached. " +
-        "Expected: " + existing.getTypeLabel() + ", got: " + type);
+      throw new SQLException(
+          "Cannot change parameter type after statement is cached. "
+              + "Expected: "
+              + existing.getTypeLabel()
+              + ", got: "
+              + type);
     }
     try {
       SqlTypeEnum.fromLabel(type);
@@ -348,7 +353,8 @@ public class BigtablePreparedStatement implements PreparedStatement {
   }
 
   @Override
-  public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
+  public void setCharacterStream(int parameterIndex, Reader reader, int length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("setCharacterStream is not supported");
   }
 
@@ -403,9 +409,9 @@ public class BigtablePreparedStatement implements PreparedStatement {
     } else {
       localDate = x.toLocalDate();
     }
-    com.google.cloud.Date cloudDate = com.google.cloud.Date.fromYearMonthDay(
-      localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth()
-    );
+    com.google.cloud.Date cloudDate =
+        com.google.cloud.Date.fromYearMonthDay(
+            localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
     setParameter(parameterIndex, "date", cloudDate);
   }
 
@@ -420,9 +426,7 @@ public class BigtablePreparedStatement implements PreparedStatement {
     Instant instant;
     if (cal != null) {
       ZoneId zoneId = cal.getTimeZone().toZoneId();
-      instant = x.toInstant().atZone(ZoneOffset.UTC)
-        .withZoneSameInstant(zoneId)
-        .toInstant();
+      instant = x.toInstant().atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId).toInstant();
     } else {
       instant = x.toInstant();
     }
@@ -575,7 +579,8 @@ public class BigtablePreparedStatement implements PreparedStatement {
   }
 
   @Override
-  public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
+  public void setNCharacterStream(int parameterIndex, Reader value, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("setNCharacterStream is not supported");
   }
 
@@ -590,7 +595,8 @@ public class BigtablePreparedStatement implements PreparedStatement {
   }
 
   @Override
-  public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
+  public void setBlob(int parameterIndex, InputStream inputStream, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("setBlob is not supported");
   }
 
@@ -605,7 +611,8 @@ public class BigtablePreparedStatement implements PreparedStatement {
   }
 
   @Override
-  public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
+  public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("setObject is not supported");
   }
 
@@ -620,7 +627,8 @@ public class BigtablePreparedStatement implements PreparedStatement {
   }
 
   @Override
-  public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
+  public void setCharacterStream(int parameterIndex, Reader reader, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("setCharacterStream is not supported");
   }
 
@@ -722,9 +730,7 @@ public class BigtablePreparedStatement implements PreparedStatement {
   }
 
   @Override
-  public void clearWarnings() throws SQLException {
-
-  }
+  public void clearWarnings() throws SQLException {}
 
   @Override
   public void setCursorName(String name) throws SQLException {

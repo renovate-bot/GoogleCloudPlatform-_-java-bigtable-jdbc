@@ -18,9 +18,6 @@ package com.google.cloud.bigtable.jdbc;
 
 import com.google.cloud.bigtable.data.v2.models.sql.ColumnMetadata;
 import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
-import com.google.cloud.bigtable.jdbc.util.SqlTypeEnum;
-import com.google.protobuf.ByteString;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -42,9 +39,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +52,8 @@ public class BigtableResultSet implements ResultSet {
   private boolean isAfterLast = false;
   private boolean closed = false;
 
-  public BigtableResultSet(com.google.cloud.bigtable.data.v2.models.sql.ResultSet bigtableResultSet) {
+  public BigtableResultSet(
+      com.google.cloud.bigtable.data.v2.models.sql.ResultSet bigtableResultSet) {
     this.bigtableResultSet = bigtableResultSet;
   }
 
@@ -67,7 +63,9 @@ public class BigtableResultSet implements ResultSet {
     this.currentRow = -1;
   }
 
-  private Object getTypedValue(com.google.cloud.bigtable.data.v2.models.sql.ResultSet resultSet, ColumnMetadata column) throws SQLException {
+  private Object getTypedValue(
+      com.google.cloud.bigtable.data.v2.models.sql.ResultSet resultSet, ColumnMetadata column)
+      throws SQLException {
     String columnName = column.name();
     Object value;
 
@@ -469,9 +467,7 @@ public class BigtableResultSet implements ResultSet {
   }
 
   @Override
-  public void clearWarnings() throws SQLException {
-
-  }
+  public void clearWarnings() throws SQLException {}
 
   @Override
   public String getCursorName() throws SQLException {
@@ -488,7 +484,8 @@ public class BigtableResultSet implements ResultSet {
     checkClosed();
     int zeroBasedIndex = columnIndex - 1;
 
-    if (zeroBasedIndex < 0 || zeroBasedIndex >= bigtableResultSet.getMetadata().getColumns().size()) {
+    if (zeroBasedIndex < 0
+        || zeroBasedIndex >= bigtableResultSet.getMetadata().getColumns().size()) {
       throw new SQLException("Invalid column index: " + columnIndex);
     }
 
@@ -811,12 +808,14 @@ public class BigtableResultSet implements ResultSet {
   }
 
   @Override
-  public void updateBinaryStream(String columnLabel, InputStream x, int length) throws SQLException {
+  public void updateBinaryStream(String columnLabel, InputStream x, int length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateBinaryStream is not supported");
   }
 
   @Override
-  public void updateCharacterStream(String columnLabel, Reader reader, int length) throws SQLException {
+  public void updateCharacterStream(String columnLabel, Reader reader, int length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateCharacterStream is not supported");
   }
 
@@ -1106,7 +1105,8 @@ public class BigtableResultSet implements ResultSet {
   }
 
   @Override
-  public void updateNCharacterStream(String columnLabel, Reader reader, long length) throws SQLException {
+  public void updateNCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateNCharacterStream is not supported");
   }
 
@@ -1126,27 +1126,32 @@ public class BigtableResultSet implements ResultSet {
   }
 
   @Override
-  public void updateAsciiStream(String columnLabel, InputStream x, long length) throws SQLException {
+  public void updateAsciiStream(String columnLabel, InputStream x, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateAsciiStream is not supported");
   }
 
   @Override
-  public void updateBinaryStream(String columnLabel, InputStream x, long length) throws SQLException {
+  public void updateBinaryStream(String columnLabel, InputStream x, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateBinaryStream is not supported");
   }
 
   @Override
-  public void updateCharacterStream(String columnLabel, Reader reader, long length) throws SQLException {
+  public void updateCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateCharacterStream is not supported");
   }
 
   @Override
-  public void updateBlob(int columnIndex, InputStream inputStream, long length) throws SQLException {
+  public void updateBlob(int columnIndex, InputStream inputStream, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateBlob is not supported");
   }
 
   @Override
-  public void updateBlob(String columnLabel, InputStream inputStream, long length) throws SQLException {
+  public void updateBlob(String columnLabel, InputStream inputStream, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("updateBlob is not supported");
   }
 

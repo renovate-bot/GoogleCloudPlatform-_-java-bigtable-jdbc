@@ -20,7 +20,6 @@ import com.google.cloud.Date;
 import com.google.cloud.bigtable.data.v2.models.sql.BoundStatement;
 import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
 import com.google.protobuf.ByteString;
-
 import java.sql.Types;
 import java.time.*;
 import java.util.Arrays;
@@ -105,16 +104,16 @@ public enum SqlTypeEnum {
 
   public static SqlTypeEnum fromLabel(String label) {
     return Arrays.stream(values())
-      .filter(e -> e.name().equalsIgnoreCase(label))
-      .findFirst()
-      .orElseThrow(() -> new IllegalArgumentException("Unknown SqlType: " + label));
+        .filter(e -> e.name().equalsIgnoreCase(label))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Unknown SqlType: " + label));
   }
 
   public static SqlTypeEnum fromJdbcType(int jdbcType) {
     return Arrays.stream(values())
-      .filter(e -> e.getSqlTypeCode() == jdbcType)
-      .findFirst()
-      .orElseThrow(() -> new IllegalArgumentException("Unsupported JDBC type: " + jdbcType));
+        .filter(e -> e.getSqlTypeCode() == jdbcType)
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Unsupported JDBC type: " + jdbcType));
   }
 
   public static SqlTypeEnum fromSqlType(SqlType<?> sqlType) {

@@ -1,11 +1,10 @@
 package com.google.cloud.bigtable.jdbc;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.sql.SQLException;
 import java.util.*;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class BigtableResultSetTest {
 

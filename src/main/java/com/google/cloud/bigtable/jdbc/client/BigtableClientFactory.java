@@ -22,11 +22,11 @@ import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
-
 import java.io.IOException;
 
 public class BigtableClientFactory {
   private final Credentials credentials;
+
   public BigtableClientFactory() throws IOException {
     this.credentials = GoogleCredentials.getApplicationDefault();
   }
@@ -36,20 +36,20 @@ public class BigtableClientFactory {
   }
 
   public BigtableDataClient createBigtableDataClient(
-    String projectId,
-    String instanceId,
-    String appProfileId) throws IOException {
-    BigtableDataSettings.Builder builder = BigtableDataSettings.newBuilder()
-      .setProjectId(projectId)
-      .setInstanceId(instanceId)
-      .setCredentialsProvider(FixedCredentialsProvider.create(credentials));
+      String projectId, String instanceId, String appProfileId) throws IOException {
+    BigtableDataSettings.Builder builder =
+        BigtableDataSettings.newBuilder()
+            .setProjectId(projectId)
+            .setInstanceId(instanceId)
+            .setCredentialsProvider(FixedCredentialsProvider.create(credentials));
 
     if (appProfileId != null) {
       builder.setAppProfileId(appProfileId);
     }
 
-    builder.stubSettings()
-      .setHeaderProvider(FixedHeaderProvider.create("user-agent", "bigtable-jdbc/1.0.0"));
+    builder
+        .stubSettings()
+        .setHeaderProvider(FixedHeaderProvider.create("user-agent", "bigtable-jdbc/1.0.0"));
 
     return BigtableDataClient.create(builder.build());
   }

@@ -19,7 +19,6 @@ package com.google.cloud.bigtable.jdbc;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.sql.BoundStatement;
 import com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,6 +33,7 @@ public class BigtableStatement implements Statement {
   public BigtableStatement(BigtableDataClient client) {
     this.client = client;
   }
+
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     checkClosed();
@@ -41,7 +41,7 @@ public class BigtableStatement implements Statement {
     BoundStatement boundStatement = preparedStatement.bind().build();
 
     com.google.cloud.bigtable.data.v2.models.sql.ResultSet resultSet =
-      client.executeQuery(boundStatement);
+        client.executeQuery(boundStatement);
     return new BigtableResultSet(resultSet);
   }
 
@@ -109,9 +109,7 @@ public class BigtableStatement implements Statement {
   }
 
   @Override
-  public void clearWarnings() throws SQLException {
-
-  }
+  public void clearWarnings() throws SQLException {}
 
   @Override
   public void setCursorName(String name) throws SQLException {

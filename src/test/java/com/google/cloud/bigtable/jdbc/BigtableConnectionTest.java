@@ -1,11 +1,10 @@
 package com.google.cloud.bigtable.jdbc;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.sql.SQLException;
 import java.util.Properties;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class BigtableConnectionTest {
   private final String baseURL = "jdbc:bigtable:/projects/test-project/instances/test-instance";
@@ -27,7 +26,7 @@ public class BigtableConnectionTest {
   @Test
   public void testCheckAuthentication() throws SQLException {
     String queryParamsURL = baseURL + "?accessToken=test-token";
-    BigtableConnection bigtableConnection = new BigtableConnection(queryParamsURL,properties);
+    BigtableConnection bigtableConnection = new BigtableConnection(queryParamsURL, properties);
     assertNotNull(bigtableConnection);
   }
 }

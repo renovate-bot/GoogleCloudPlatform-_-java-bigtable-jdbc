@@ -17,11 +17,21 @@
 package com.google.cloud.bigtable.jdbc;
 
 import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
-
 import java.sql.Types;
 
 public enum BigtableColumnType {
-  STRING, INT64, FLOAT32, FLOAT64, BOOL, BYTES, UNKNOWN, STRUCT, DATE, ARRAY, TIMESTAMP, MAP;
+  STRING,
+  INT64,
+  FLOAT32,
+  FLOAT64,
+  BOOL,
+  BYTES,
+  UNKNOWN,
+  STRUCT,
+  DATE,
+  ARRAY,
+  TIMESTAMP,
+  MAP;
 
   public static BigtableColumnType fromSqlType(SqlType sqlType) {
     if (sqlType == null) {

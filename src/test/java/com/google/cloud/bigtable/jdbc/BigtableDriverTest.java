@@ -1,13 +1,12 @@
 package com.google.cloud.bigtable.jdbc;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class BigtableDriverTest {
   private BigtableDriver driver;

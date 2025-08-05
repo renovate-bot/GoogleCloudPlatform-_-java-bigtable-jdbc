@@ -3,10 +3,10 @@ package com.google.cloud.bigtable.jdbc.util;
 public class SqlParser {
 
   /**
-   * Replaces '?' placeholders with named parameters @param1, @param2, ...
-   * Ignores placeholders inside quotes, triple quotes, or comments.
+   * Replaces '?' placeholders with named parameters @param1, @param2, ... Ignores placeholders
+   * inside quotes, triple quotes, or comments.
    *
-   * @param sql        the SQL string with '?' placeholders
+   * @param sql the SQL string with '?' placeholders
    * @param paramCount expected number of parameters
    * @return SQL with named parameters
    */
@@ -72,14 +72,20 @@ public class SqlParser {
 
       // Handle triple quotes (""" ... """)
       if (!inSingleQuote && !inDoubleQuote && !inSingleLineComment && !inMultiLineComment) {
-        if (!inTripleQuote && c == '"' && i + 2 < length
-          && sql.charAt(i + 1) == '"' && sql.charAt(i + 2) == '"') {
+        if (!inTripleQuote
+            && c == '"'
+            && i + 2 < length
+            && sql.charAt(i + 1) == '"'
+            && sql.charAt(i + 2) == '"') {
           inTripleQuote = true;
           parsed.append("\"\"\"");
           i += 2;
           continue;
-        } else if (inTripleQuote && c == '"' && i + 2 < length
-          && sql.charAt(i + 1) == '"' && sql.charAt(i + 2) == '"') {
+        } else if (inTripleQuote
+            && c == '"'
+            && i + 2 < length
+            && sql.charAt(i + 1) == '"'
+            && sql.charAt(i + 2) == '"') {
           inTripleQuote = false;
           parsed.append("\"\"\"");
           i += 2;
@@ -123,7 +129,12 @@ public class SqlParser {
       }
 
       // Replace placeholder '?' only if outside any quote or comment
-      if (c == '?' && !inSingleQuote && !inDoubleQuote && !inTripleQuote && !inSingleLineComment && !inMultiLineComment) {
+      if (c == '?'
+          && !inSingleQuote
+          && !inDoubleQuote
+          && !inTripleQuote
+          && !inSingleLineComment
+          && !inMultiLineComment) {
         if (paramIndex > paramCount) {
           throw new IllegalArgumentException("More placeholders than paramCount");
         }
@@ -140,5 +151,3 @@ public class SqlParser {
     return parsed.toString();
   }
 }
-
-

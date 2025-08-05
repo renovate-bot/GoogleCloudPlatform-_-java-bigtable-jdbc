@@ -28,8 +28,10 @@ import java.util.logging.Logger;
 public class BigtableDriver implements Driver {
   /** Url_Prefix for using this driver */
   private static final String URL_PREFIX = "jdbc:bigtable:/";
+
   /** MAJOR Version of the driver */
   private static final int MAJOR_VERSION = 1;
+
   /** Minor Version of the driver */
   private static final int MINOR_VERSION = 9;
 
@@ -79,10 +81,7 @@ public class BigtableDriver implements Driver {
 
   @Override
   public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-    String[] supportedProps = new String[] {
-      "app_profile_id",
-      "universe_domain"
-    };
+    String[] supportedProps = new String[] {"app_profile_id", "universe_domain"};
     DriverPropertyInfo[] driverProps = new DriverPropertyInfo[supportedProps.length];
     for (int i = 0; i < supportedProps.length; i++) {
       String propName = supportedProps[i];
