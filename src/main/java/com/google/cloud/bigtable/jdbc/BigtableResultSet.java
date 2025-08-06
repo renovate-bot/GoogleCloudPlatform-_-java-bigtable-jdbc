@@ -57,8 +57,10 @@ public class BigtableResultSet implements ResultSet {
     this.bigtableResultSet = bigtableResultSet;
   }
 
-  BigtableResultSet(List<Map<String, Object>> rows) {
-    this.bigtableResultSet = null;
+  public BigtableResultSet(
+      com.google.cloud.bigtable.data.v2.models.sql.ResultSet bigtableResultSet,
+      List<Map<String, Object>> rows) {
+    this.bigtableResultSet = bigtableResultSet;
     this.rows = rows;
     this.currentRow = -1;
   }

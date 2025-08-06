@@ -115,7 +115,8 @@ public class BigtableConnection implements Connection {
     String url = uri.getPath();
     if (url == null || !url.startsWith("/projects/")) {
       throw new IllegalArgumentException(
-          "Invalid Bigtable JDBC URL path: expected it to start with '/projects/', but got: "
+          "Invalid Bigtable JDBC URL path: expected it to start with '/projects/',"
+              + "but got: "
               + url);
     }
 

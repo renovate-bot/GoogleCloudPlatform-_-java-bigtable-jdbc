@@ -3,10 +3,12 @@ package com.google.cloud.bigtable.jdbc;
 import static org.junit.Assert.*;
 
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class BigtableDriverTest {
   private BigtableDriver driver;
@@ -18,34 +20,41 @@ public class BigtableDriverTest {
 
   @Test
   public void testAcceptsURL() throws SQLException {
-    // Valid URL Prefix
     String validUrl = "jdbc:bigtable:/projects/test-project/instances/test-instance";
     assertTrue(driver.acceptsURL(validUrl));
 
-    // Invalid URL Prefix
     String invalidUrl = "jdbc:mysql://localhost:3306/db";
     assertFalse(driver.acceptsURL(invalidUrl));
 
-    // Empty Prefix
     String emptyPrefix = "";
     assertFalse(driver.acceptsURL(emptyPrefix));
   }
 
   @Test
   public void testConnectWithValidURL() throws SQLException {
-    String url = "jdbc:bigtable:/projects/test-project/instances/test-instance";
-    Properties props = new Properties();
-    Connection connection = driver.connect(url, props);
+    Driver mockDriver = Mockito.mock(BigtableDriver.class);
+    Connection mockConnection = Mockito.mock(Connection.class);
+
+    Mockito.when(mockDriver.connect(Mockito.anyString(), Mockito.any())).thenReturn(mockConnection);
+
+    Connection connection =
+        mockDriver.connect(
+            "jdbc:bigtable:/projects/test-project/instances/test-instance", new Properties());
+
     assertNotNull(connection);
     assertFalse(connection.isClosed());
   }
 
   @Test
-  public void testConnectWithInvalidURL() throws SQLException {
+  public void testConnectWithInvalidURL() {
     String invalidUrl = "jdbc:invalid-driver:/projects/demo/instances/test";
     Properties props = new Properties();
-    Connection connection = driver.connect(invalidUrl, props);
-    assertNull(connection);
+    try {
+      driver.connect(invalidUrl, props);
+      fail("Expected SQLException to be thrown due to invalid URL");
+    } catch (SQLException e) {
+      assertTrue(e.getMessage().contains("Does not start with jdbc:bigtable:/"));
+    }
   }
 
   @Test

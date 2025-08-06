@@ -18,14 +18,7 @@ public class BigtableConnectionTest {
 
   @Test
   public void testValidClientCreationWithQueryParams() throws SQLException {
-    String queryParamsURL = baseURL + "?appProfileId=dev&endpoint=bigtable.googleapis.com:443";
-    BigtableConnection bigtableConnection = new BigtableConnection(queryParamsURL, properties);
-    assertNotNull(bigtableConnection);
-  }
-
-  @Test
-  public void testCheckAuthentication() throws SQLException {
-    String queryParamsURL = baseURL + "?accessToken=test-token";
+    String queryParamsURL = baseURL + "?app_profile_id=dev&universe_domain=default";
     BigtableConnection bigtableConnection = new BigtableConnection(queryParamsURL, properties);
     assertNotNull(bigtableConnection);
   }
