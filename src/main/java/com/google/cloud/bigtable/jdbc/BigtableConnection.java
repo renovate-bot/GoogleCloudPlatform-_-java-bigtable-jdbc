@@ -1,29 +1,20 @@
 /*
  * Copyright 2025 Google LLC
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ * https://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.google.cloud.bigtable.jdbc;
 
-import com.google.cloud.bigtable.data.v2.BigtableDataClient;
-import com.google.cloud.bigtable.jdbc.client.BigtableClientFactory;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -49,17 +40,57 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import com.google.cloud.bigtable.data.v2.BigtableDataClient;
+import com.google.cloud.bigtable.jdbc.client.BigtableClientFactoryImpl;
+import com.google.cloud.bigtable.jdbc.client.IBigtableClientFactory;
+import com.google.cloud.bigtable.jdbc.util.BigtableJdbcUrlParser;
 
 public class BigtableConnection implements Connection {
   private Map<String, Class<?>> typeMap = new HashMap<>();
+  // The actual client, responsible for operations and communicates with Bigtable.
   private final BigtableDataClient client;
   private boolean isClosed = false;
   private static final Set<String> SUPPORTED_KEYS =
       new HashSet<>(Arrays.asList("app_profile_id", "universe_domain"));
+  private final IBigtableClientFactory bigtableClientFactory;
 
   public BigtableConnection(String url, Properties info) throws SQLException {
+    this(url, info, null);
+  }
+
+  public BigtableConnection(String url, Properties info, BigtableDataClient dataClient)
+      throws SQLException {
+    this(url, info, dataClient, createClientFactory());
+  }
+
+  private static IBigtableClientFactory createClientFactory() throws SQLException {
     try {
-      Properties urlParams = parseURL(url);
+      return new BigtableClientFactoryImpl();
+    } catch (IOException e) {
+      throw new SQLException("Failed to create BigtableClientFactory", e);
+    }
+  }
+
+  public BigtableConnection(String url, Properties info, BigtableDataClient dataClient,
+      IBigtableClientFactory bigtableClientFactory) throws SQLException {
+    this.bigtableClientFactory = bigtableClientFactory;
+    try {
+      BigtableJdbcUrlParser.BigtableJdbcUrl parsedUrl = BigtableJdbcUrlParser.parse(url);
+      Properties urlParams = new Properties();
+      urlParams.setProperty("projectId", parsedUrl.getProjectId());
+      urlParams.setProperty("instanceId", parsedUrl.getInstanceId());
+      for (Map.Entry<String, String> entry : parsedUrl.getQueryParameters().entrySet()) {
+        String key = entry.getKey();
+        if (!SUPPORTED_KEYS.contains(key)) {
+          throw new SQLException("Unrecognized connection parameter: " + key);
+        }
+        urlParams.setProperty(key, entry.getValue());
+      }
+
+      if (dataClient != null) {
+        this.client = dataClient;
+        return;
+      }
       for (String key : info.stringPropertyNames()) {
         if (urlParams.containsKey(key) && SUPPORTED_KEYS.contains(key)) {
           throw new SQLException(
@@ -70,85 +101,19 @@ public class BigtableConnection implements Connection {
       connectionParams.putAll(urlParams);
       connectionParams.putAll(info);
       this.client = createBigtableDataClient(connectionParams);
+    } catch (java.net.URISyntaxException | IllegalArgumentException e) {
+      throw new SQLException("Malformed JDBC URL: " + url, e);
     } catch (Exception e) {
       throw new SQLException("Failed to connect to Bigtable", e);
     }
   }
 
-  private Properties parseURL(String url) {
-    if (url == null || !url.startsWith("jdbc:bigtable:")) {
-      throw new IllegalArgumentException("URL must start with jdbc:bigtable:");
-    }
+  BigtableDataClient createBigtableDataClient(Properties properties) throws IOException {
+    String projectId = properties.getProperty("projectId");
+    String instanceId = properties.getProperty("instanceId");
+    String appProfileId = properties.getProperty("app_profile_id");
 
-    Properties uriProps;
-    try {
-      URI uri = new URI(url.substring("jdbc:".length()));
-      uriProps = parseProjectAndInstanceFromUrl(uri);
-      String query = uri.getQuery();
-      if (query == null) return uriProps;
-
-      String[] pairs = query.split("&");
-      for (String pair : pairs) {
-        int idx = pair.indexOf('=');
-        if (idx > 0) {
-          String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8.name());
-          String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8.name());
-
-          if (!SUPPORTED_KEYS.contains(key)) {
-            throw new SQLException("Unrecognized connection parameter: " + key);
-          }
-          if (uriProps.containsKey(key)) {
-            throw new SQLException("Duplicate parameter detected: " + key);
-          }
-          uriProps.setProperty(key, value);
-        }
-      }
-    } catch (UnsupportedEncodingException | SQLException e) {
-      throw new RuntimeException(e);
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException("Malformed JDBC URL: " + url, e);
-    }
-    return uriProps;
-  }
-
-  private Properties parseProjectAndInstanceFromUrl(URI uri) {
-    String url = uri.getPath();
-    if (url == null || !url.startsWith("/projects/")) {
-      throw new IllegalArgumentException(
-          "Invalid Bigtable JDBC URL path: expected it to start with '/projects/',"
-              + "but got: "
-              + url);
-    }
-
-    String[] parts = url.substring("/projects/".length()).split("/");
-
-    if (parts.length < 3 || !"instances".equals(parts[1])) {
-      throw new IllegalArgumentException(
-          "Invalid path structure in JDBC URL. Expected 'instances' at position 2, but found: '"
-              + (parts.length > 1 ? parts[1] : "null")
-              + "'. Full path: "
-              + url);
-    }
-
-    Properties properties = new Properties();
-    properties.setProperty("projectId", parts[0]);
-    properties.setProperty("instanceId", parts[1]);
-
-    return properties;
-  }
-
-  private BigtableDataClient createBigtableDataClient(Properties properties) {
-    try {
-      String projectId = properties.getProperty("projectId");
-      String instanceId = properties.getProperty("instanceId");
-      String appProfileId = properties.getProperty("app_profile_id");
-
-      BigtableClientFactory bigtableClientFactory = new BigtableClientFactory();
-
-      return bigtableClientFactory.createBigtableDataClient(projectId, instanceId, appProfileId);
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to create bigtable client", e);
-    }
+    return this.bigtableClientFactory.createBigtableDataClient(projectId, instanceId, appProfileId);
   }
 
   private void checkClosed() throws SQLException {
@@ -203,13 +168,14 @@ public class BigtableConnection implements Connection {
   @Override
   public void close() throws SQLException {
     if (!isClosed) {
+      client.close();
       isClosed = true;
     }
   }
 
   @Override
   public boolean isClosed() throws SQLException {
-    throw new SQLFeatureNotSupportedException("isClosed is not supported");
+    return isClosed;
   }
 
   @Override
@@ -806,25 +772,20 @@ public class BigtableConnection implements Connection {
       }
 
       @Override
-      public ResultSet getProcedures(
-          String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
+      public ResultSet getProcedures(String catalog, String schemaPattern,
+          String procedureNamePattern) throws SQLException {
         return null;
       }
 
       @Override
-      public ResultSet getProcedureColumns(
-          String catalog,
-          String schemaPattern,
-          String procedureNamePattern,
-          String columnNamePattern)
-          throws SQLException {
+      public ResultSet getProcedureColumns(String catalog, String schemaPattern,
+          String procedureNamePattern, String columnNamePattern) throws SQLException {
         return null;
       }
 
       @Override
-      public ResultSet getTables(
-          String catalog, String schemaPattern, String tableNamePattern, String[] types)
-          throws SQLException {
+      public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern,
+          String[] types) throws SQLException {
         return null;
       }
 
@@ -844,29 +805,26 @@ public class BigtableConnection implements Connection {
       }
 
       @Override
-      public ResultSet getColumns(
-          String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
-          throws SQLException {
+      public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern,
+          String columnNamePattern) throws SQLException {
         return null;
       }
 
       @Override
-      public ResultSet getColumnPrivileges(
-          String catalog, String schema, String table, String columnNamePattern)
-          throws SQLException {
+      public ResultSet getColumnPrivileges(String catalog, String schema, String table,
+          String columnNamePattern) throws SQLException {
         return null;
       }
 
       @Override
-      public ResultSet getTablePrivileges(
-          String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
+      public ResultSet getTablePrivileges(String catalog, String schemaPattern,
+          String tableNamePattern) throws SQLException {
         return null;
       }
 
       @Override
-      public ResultSet getBestRowIdentifier(
-          String catalog, String schema, String table, int scope, boolean nullable)
-          throws SQLException {
+      public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope,
+          boolean nullable) throws SQLException {
         return null;
       }
 
@@ -895,13 +853,8 @@ public class BigtableConnection implements Connection {
       }
 
       @Override
-      public ResultSet getCrossReference(
-          String parentCatalog,
-          String parentSchema,
-          String parentTable,
-          String foreignCatalog,
-          String foreignSchema,
-          String foreignTable)
+      public ResultSet getCrossReference(String parentCatalog, String parentSchema,
+          String parentTable, String foreignCatalog, String foreignSchema, String foreignTable)
           throws SQLException {
         return null;
       }
@@ -912,9 +865,8 @@ public class BigtableConnection implements Connection {
       }
 
       @Override
-      public ResultSet getIndexInfo(
-          String catalog, String schema, String table, boolean unique, boolean approximate)
-          throws SQLException {
+      public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique,
+          boolean approximate) throws SQLException {
         return null;
       }
 
@@ -979,9 +931,8 @@ public class BigtableConnection implements Connection {
       }
 
       @Override
-      public ResultSet getUDTs(
-          String catalog, String schemaPattern, String typeNamePattern, int[] types)
-          throws SQLException {
+      public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern,
+          int[] types) throws SQLException {
         return null;
       }
 
@@ -1023,9 +974,8 @@ public class BigtableConnection implements Connection {
       }
 
       @Override
-      public ResultSet getAttributes(
-          String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern)
-          throws SQLException {
+      public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern,
+          String attributeNamePattern) throws SQLException {
         return null;
       }
 
@@ -1100,25 +1050,20 @@ public class BigtableConnection implements Connection {
       }
 
       @Override
-      public ResultSet getFunctions(
-          String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
+      public ResultSet getFunctions(String catalog, String schemaPattern,
+          String functionNamePattern) throws SQLException {
         return null;
       }
 
       @Override
-      public ResultSet getFunctionColumns(
-          String catalog,
-          String schemaPattern,
-          String functionNamePattern,
-          String columnNamePattern)
-          throws SQLException {
+      public ResultSet getFunctionColumns(String catalog, String schemaPattern,
+          String functionNamePattern, String columnNamePattern) throws SQLException {
         return null;
       }
 
       @Override
-      public ResultSet getPseudoColumns(
-          String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
-          throws SQLException {
+      public ResultSet getPseudoColumns(String catalog, String schemaPattern,
+          String tableNamePattern, String columnNamePattern) throws SQLException {
         return null;
       }
 
@@ -1257,8 +1202,8 @@ public class BigtableConnection implements Connection {
   }
 
   @Override
-  public Statement createStatement(
-      int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+  public Statement createStatement(int resultSetType, int resultSetConcurrency,
+      int resultSetHoldability) throws SQLException {
     checkClosed();
     if (resultSetType != ResultSet.TYPE_FORWARD_ONLY) {
       throw new SQLFeatureNotSupportedException("Only TYPE_FORWARD_ONLY is supported");
@@ -1273,9 +1218,8 @@ public class BigtableConnection implements Connection {
   }
 
   @Override
-  public PreparedStatement prepareStatement(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
+      int resultSetHoldability) throws SQLException {
     checkClosed();
     if (resultSetType != ResultSet.TYPE_FORWARD_ONLY) {
       throw new SQLFeatureNotSupportedException("Only TYPE_FORWARD_ONLY is supported");
@@ -1290,9 +1234,8 @@ public class BigtableConnection implements Connection {
   }
 
   @Override
-  public CallableStatement prepareCall(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
+  public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
+      int resultSetHoldability) throws SQLException {
     throw new SQLFeatureNotSupportedException("prepareCall is not supported");
   }
 

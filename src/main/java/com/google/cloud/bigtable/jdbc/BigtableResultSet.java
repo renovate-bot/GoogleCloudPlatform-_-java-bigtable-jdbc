@@ -1,22 +1,21 @@
 /*
  * Copyright 2025 Google LLC
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ * https://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.google.cloud.bigtable.jdbc;
 
 import com.google.cloud.bigtable.data.v2.models.sql.ColumnMetadata;
+import com.google.cloud.bigtable.data.v2.models.sql.ResultSet;
 import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
 import java.io.InputStream;
 import java.io.Reader;
@@ -28,7 +27,6 @@ import java.sql.Clob;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
-import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
@@ -43,8 +41,8 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-public class BigtableResultSet implements ResultSet {
-  private final com.google.cloud.bigtable.data.v2.models.sql.ResultSet bigtableResultSet;
+public class BigtableResultSet implements java.sql.ResultSet {
+  private final ResultSet bigtableResultSet;
   private List<Map<String, Object>> rows;
   private int currentRow = -1;
   private boolean lastValueWasNull = false;
@@ -52,22 +50,17 @@ public class BigtableResultSet implements ResultSet {
   private boolean isAfterLast = false;
   private boolean closed = false;
 
-  public BigtableResultSet(
-      com.google.cloud.bigtable.data.v2.models.sql.ResultSet bigtableResultSet) {
+  public BigtableResultSet(ResultSet bigtableResultSet) {
     this.bigtableResultSet = bigtableResultSet;
   }
 
-  public BigtableResultSet(
-      com.google.cloud.bigtable.data.v2.models.sql.ResultSet bigtableResultSet,
-      List<Map<String, Object>> rows) {
+  public BigtableResultSet(ResultSet bigtableResultSet, List<Map<String, Object>> rows) {
     this.bigtableResultSet = bigtableResultSet;
     this.rows = rows;
     this.currentRow = -1;
   }
 
-  private Object getTypedValue(
-      com.google.cloud.bigtable.data.v2.models.sql.ResultSet resultSet, ColumnMetadata column)
-      throws SQLException {
+  private Object getTypedValue(ResultSet resultSet, ColumnMetadata column) throws SQLException {
     String columnName = column.name();
     Object value;
 
