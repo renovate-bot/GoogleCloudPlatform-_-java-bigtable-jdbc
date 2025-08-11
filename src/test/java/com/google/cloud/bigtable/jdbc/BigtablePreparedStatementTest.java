@@ -26,6 +26,7 @@ public class BigtablePreparedStatementTest {
 
   private static final String SQL = "SELECT * FROM table WHERE id = ?";
   @Mock private BigtableDataClient mockDataClient;
+  @Mock private BigtableConnection mockConnection;
 
   @Mock
   private com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement mockPreparedStatement;
@@ -47,7 +48,7 @@ public class BigtablePreparedStatementTest {
   }
 
   private BigtablePreparedStatement createStatement() {
-    return new BigtablePreparedStatement(SQL, mockDataClient);
+    return new BigtablePreparedStatement(mockConnection, SQL, mockDataClient);
   }
 
   @Test
@@ -120,12 +121,90 @@ public class BigtablePreparedStatementTest {
   }
 
   @Test
+  public void testSetNString() throws SQLException {
+    PreparedStatement statement = createStatement();
+    statement.setNString(1, "test");
+  }
+
+  @Test
+  public void testSetNullWithTypeName() throws SQLException {
+    PreparedStatement statement = createStatement();
+    statement.setNull(1, java.sql.Types.VARCHAR, "VARCHAR");
+  }
+
+  @Test
+  public void testGetParameterMetaData() throws SQLException {
+    PreparedStatement statement = createStatement();
+    assertNotNull(statement.getParameterMetaData());
+  }
+
+  @Test
   public void testUnsupportedFeatures() {
     assertThrows(
         SQLFeatureNotSupportedException.class,
         () -> {
           PreparedStatement statement = createStatement();
           statement.executeUpdate();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setObject(1, new Object());
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setCharacterStream(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setRef(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setBlob(1, (java.sql.Blob) null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setClob(1, (java.sql.Clob) null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setURL(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setRowId(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setNCharacterStream(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setNClob(1, (java.sql.NClob) null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setSQLXML(1, null);
         });
   }
 
@@ -167,7 +246,8 @@ public class BigtablePreparedStatementTest {
     assertThrows(
         SQLException.class,
         () -> {
-          BigtablePreparedStatement statement = new BigtablePreparedStatement(null, mockDataClient);
+          BigtablePreparedStatement statement =
+              new BigtablePreparedStatement(mockConnection, null, mockDataClient);
           statement.execute();
         });
   }

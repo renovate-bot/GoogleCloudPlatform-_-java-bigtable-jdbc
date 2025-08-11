@@ -12,6 +12,7 @@ import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.jdbc.client.IBigtableClientFactory;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
@@ -178,6 +179,13 @@ public class BigtableConnectionTest {
         SQLFeatureNotSupportedException.class,
         () -> {
           Connection connection = createConnection();
+          connection.getAutoCommit();
+        });
+
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
           connection.commit();
         });
 
@@ -186,6 +194,83 @@ public class BigtableConnectionTest {
         () -> {
           Connection connection = createConnection();
           connection.rollback();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.createClob();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.createBlob();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.createNClob();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.createSQLXML();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.createStruct("my_type", new Object[0]);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.setTransactionIsolation(Connection.TRANSACTION_NONE);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.setReadOnly(true);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.setCatalog("test");
+        });
+    assertThrows(
+        RuntimeException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.setClientInfo("test", "test");
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.setSchema("test");
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          Connection connection = createConnection();
+          connection.setSavepoint();
+        });
+  }
+
+  @Test
+  public void testSetHoldability() throws SQLException {
+    Connection connection = createConnection();
+    connection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
         });
   }
 

@@ -18,34 +18,43 @@ package com.google.cloud.bigtable.jdbc;
 
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.models.sql.BoundStatement;
-import com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BigtableStatement implements Statement {
-  private final BigtableDataClient client;
-  private boolean isClosed = false;
+  protected final BigtableConnection connection;
+  protected final BigtableDataClient client;
+  protected boolean isClosed = false;
+  protected int currentResultIndex = -1;
+  protected final List<ResultSet> resultSets = new ArrayList<>();
 
-  public BigtableStatement(BigtableDataClient client) {
+  public BigtableStatement(BigtableConnection connection, BigtableDataClient client) {
+    this.connection = connection;
     this.client = client;
   }
 
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     checkClosed();
-    PreparedStatement preparedStatement = client.prepareStatement(sql, null);
+    com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement preparedStatement =
+        client.prepareStatement(sql, null);
     BoundStatement boundStatement = preparedStatement.bind().build();
 
     com.google.cloud.bigtable.data.v2.models.sql.ResultSet resultSet =
         client.executeQuery(boundStatement);
-    return new BigtableResultSet(resultSet);
+    this.resultSets.clear();
+    this.resultSets.add(new BigtableResultSet(resultSet));
+    this.currentResultIndex = 0;
+    return this.resultSets.get(0);
   }
 
-  private void checkClosed() throws SQLException {
+  protected void checkClosed() throws SQLException {
     if (isClosed) {
       throw new SQLException("This Statement is already closed.");
     }
@@ -59,6 +68,10 @@ public class BigtableStatement implements Statement {
   @Override
   public void close() throws SQLException {
     if (!isClosed) {
+      for (ResultSet rs : this.resultSets) {
+        rs.close();
+      }
+      this.resultSets.clear();
       isClosed = true;
     }
   }
@@ -118,22 +131,33 @@ public class BigtableStatement implements Statement {
 
   @Override
   public boolean execute(String sql) throws SQLException {
-    throw new SQLFeatureNotSupportedException("execute is not supported");
+    this.executeQuery(sql);
+    return true;
   }
 
   @Override
   public ResultSet getResultSet() throws SQLException {
-    throw new SQLFeatureNotSupportedException("getResultSet is not supported");
+    checkClosed();
+    if (currentResultIndex >= 0 && currentResultIndex < resultSets.size()) {
+      return resultSets.get(currentResultIndex);
+    }
+    return null;
   }
 
   @Override
   public int getUpdateCount() throws SQLException {
-    throw new SQLFeatureNotSupportedException("getUpdateCount is not supported");
+    checkClosed();
+    return -1;
   }
 
   @Override
   public boolean getMoreResults() throws SQLException {
-    throw new SQLFeatureNotSupportedException("getMoreResults is not supported");
+    checkClosed();
+    if (currentResultIndex + 1 < resultSets.size()) {
+      currentResultIndex++;
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -183,7 +207,8 @@ public class BigtableStatement implements Statement {
 
   @Override
   public Connection getConnection() throws SQLException {
-    throw new SQLFeatureNotSupportedException("getConnection is not supported");
+    checkClosed();
+    return this.connection;
   }
 
   @Override
@@ -233,7 +258,7 @@ public class BigtableStatement implements Statement {
 
   @Override
   public boolean isClosed() throws SQLException {
-    throw new SQLFeatureNotSupportedException("isClosed is not supported");
+    return this.isClosed;
   }
 
   @Override
@@ -259,6 +284,16 @@ public class BigtableStatement implements Statement {
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
     throw new SQLFeatureNotSupportedException("unwrap is not supported");
+  }
+
+  @Override
+  public long getLargeMaxRows() throws SQLException {
+    throw new SQLFeatureNotSupportedException("getLargeMaxRows is not supported");
+  }
+
+  @Override
+  public void setLargeMaxRows(long max) throws SQLException {
+    throw new SQLFeatureNotSupportedException("setLargeMaxRows is not supported");
   }
 
   @Override
