@@ -72,22 +72,16 @@ public class SqlParser {
 
       // Handle triple quotes (""" ... """)
       if (!inSingleQuote && !inDoubleQuote && !inSingleLineComment && !inMultiLineComment) {
-        if (!inTripleQuote
-            && c == '"'
-            && i + 2 < length
-            && sql.charAt(i + 1) == '"'
+        if (!inTripleQuote && c == '"' && i + 2 < length && sql.charAt(i + 1) == '"'
             && sql.charAt(i + 2) == '"') {
           inTripleQuote = true;
-          parsed.append("\"\"\"");
+          parsed.append("\"\"");
           i += 2;
           continue;
-        } else if (inTripleQuote
-            && c == '"'
-            && i + 2 < length
-            && sql.charAt(i + 1) == '"'
+        } else if (inTripleQuote && c == '"' && i + 2 < length && sql.charAt(i + 1) == '"'
             && sql.charAt(i + 2) == '"') {
           inTripleQuote = false;
-          parsed.append("\"\"\"");
+          parsed.append("\"\"");
           i += 2;
           continue;
         }
@@ -101,10 +95,14 @@ public class SqlParser {
 
       // Handle single quotes (') with escapes
       if (!inDoubleQuote && !inTripleQuote && !inSingleLineComment && !inMultiLineComment) {
+        if (inSingleQuote && c == '\\') {
+          parsed.append("\\");
+          continue;
+        }
         if (c == '\'') {
           // Check for escaped quote: '' inside single quote string
           if (inSingleQuote && i + 1 < length && sql.charAt(i + 1) == '\'') {
-            parsed.append("''");
+            parsed.append("\'");
             i++; // skip next quote
             continue;
           }
@@ -129,11 +127,7 @@ public class SqlParser {
       }
 
       // Replace placeholder '?' only if outside any quote or comment
-      if (c == '?'
-          && !inSingleQuote
-          && !inDoubleQuote
-          && !inTripleQuote
-          && !inSingleLineComment
+      if (c == '?' && !inSingleQuote && !inDoubleQuote && !inTripleQuote && !inSingleLineComment
           && !inMultiLineComment) {
         if (paramIndex > paramCount) {
           throw new IllegalArgumentException("More placeholders than paramCount");

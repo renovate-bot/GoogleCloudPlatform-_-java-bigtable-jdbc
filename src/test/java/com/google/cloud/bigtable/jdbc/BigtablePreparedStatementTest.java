@@ -1,5 +1,6 @@
 package com.google.cloud.bigtable.jdbc;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -133,9 +134,25 @@ public class BigtablePreparedStatementTest {
   }
 
   @Test
+  public void testSetNullWithTypeNameUnsupported() {
+    assertThrows(
+        SQLException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setNull(1, java.sql.Types.ARRAY, "ARRAY");
+        });
+  }
+
+  @Test
   public void testGetParameterMetaData() throws SQLException {
-    PreparedStatement statement = createStatement();
-    assertNotNull(statement.getParameterMetaData());
+    BigtablePreparedStatement statement = createStatement();
+    statement.setString(1, "test");
+    statement.setLong(2, 123L);
+    java.sql.ParameterMetaData metaData = statement.getParameterMetaData();
+    assertNotNull(metaData);
+    assertEquals(2, metaData.getParameterCount());
+    assertEquals(java.sql.Types.VARCHAR, metaData.getParameterType(1));
+    assertEquals(java.sql.Types.BIGINT, metaData.getParameterType(2));
   }
 
   @Test
@@ -205,6 +222,36 @@ public class BigtablePreparedStatementTest {
         () -> {
           PreparedStatement statement = createStatement();
           statement.setSQLXML(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setTime(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setTime(1, null, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setAsciiStream(1, null);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setUnicodeStream(1, null, 0);
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          PreparedStatement statement = createStatement();
+          statement.setBinaryStream(1, null);
         });
   }
 

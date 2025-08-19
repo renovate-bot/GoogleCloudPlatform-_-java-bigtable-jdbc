@@ -14,12 +14,6 @@
 
 package com.google.cloud.bigtable.jdbc;
 
-import com.google.cloud.bigtable.data.v2.BigtableDataClient;
-import com.google.cloud.bigtable.data.v2.models.sql.BoundStatement;
-import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
-import com.google.cloud.bigtable.jdbc.util.Parameter;
-import com.google.cloud.bigtable.jdbc.util.SqlParser;
-import com.google.cloud.bigtable.jdbc.util.SqlTypeEnum;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -49,6 +43,12 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import com.google.cloud.bigtable.data.v2.BigtableDataClient;
+import com.google.cloud.bigtable.data.v2.models.sql.BoundStatement;
+import com.google.cloud.bigtable.data.v2.models.sql.SqlType;
+import com.google.cloud.bigtable.jdbc.util.Parameter;
+import com.google.cloud.bigtable.jdbc.util.SqlParser;
+import com.google.cloud.bigtable.jdbc.util.SqlTypeEnum;
 
 public class BigtablePreparedStatement extends BigtableStatement implements PreparedStatement {
   protected final String sql;
@@ -60,8 +60,8 @@ public class BigtablePreparedStatement extends BigtableStatement implements Prep
   protected final Map<Integer, Parameter> parameters = new HashMap<>();
   protected static final String PARAM_PREFIX = "param";
 
-  public BigtablePreparedStatement(
-      BigtableConnection connection, String sql, BigtableDataClient client) {
+  public BigtablePreparedStatement(BigtableConnection connection, String sql,
+      BigtableDataClient client) {
     super(connection, client);
     this.sql = sql;
   }
@@ -94,45 +94,6 @@ public class BigtablePreparedStatement extends BigtableStatement implements Prep
     return PARAM_PREFIX + parameterIndex;
   }
 
-  private String replacePlaceholdersWithNamedParams(String sql, int paramCount) {
-    StringBuilder parsed = new StringBuilder();
-    int paramIndex = 1;
-
-    boolean inSingleQuote = false;
-    boolean inDoubleQuote = false;
-
-    for (int i = 0; i < sql.length(); i++) {
-      char c = sql.charAt(i);
-
-      if (c == '\'' && !inDoubleQuote) {
-        inSingleQuote = !inSingleQuote;
-        parsed.append(c);
-        continue;
-      }
-      if (c == '"' && !inSingleQuote) {
-        inDoubleQuote = !inDoubleQuote;
-        parsed.append(c);
-        continue;
-      }
-
-      if (c == '?' && !inSingleQuote && !inDoubleQuote) {
-        if (paramIndex > paramCount) {
-          throw new IllegalArgumentException("More placeholders than paramCount");
-        }
-        paramIndex++;
-        parsed.append("@" + getParamName(paramIndex));
-      } else {
-        parsed.append(c);
-      }
-    }
-
-    if (paramIndex <= paramCount) {
-      throw new IllegalArgumentException("Fewer placeholders than paramCount");
-    }
-
-    return parsed.toString();
-  }
-
   private SqlType<?> mapToSqlType(String type) {
     return SqlTypeEnum.fromLabel(type).getSqlType();
   }
@@ -141,12 +102,8 @@ public class BigtablePreparedStatement extends BigtableStatement implements Prep
     Parameter existing = parameters.get(parameterIndex);
 
     if (isCached && existing != null && !existing.getTypeLabel().equals(type)) {
-      throw new SQLException(
-          "Cannot change parameter type after statement is cached. "
-              + "Expected: "
-              + existing.getTypeLabel()
-              + ", got: "
-              + type);
+      throw new SQLException("Cannot change parameter type after statement is cached. "
+          + "Expected: " + existing.getTypeLabel() + ", got: " + type);
     }
     try {
       SqlTypeEnum.fromLabel(type);
@@ -426,9 +383,8 @@ public class BigtablePreparedStatement extends BigtableStatement implements Prep
     } else {
       localDate = x.toLocalDate();
     }
-    com.google.cloud.Date cloudDate =
-        com.google.cloud.Date.fromYearMonthDay(
-            localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
+    com.google.cloud.Date cloudDate = com.google.cloud.Date.fromYearMonthDay(localDate.getYear(),
+        localDate.getMonthValue(), localDate.getDayOfMonth());
     setParameter(parameterIndex, "date", cloudDate);
   }
 

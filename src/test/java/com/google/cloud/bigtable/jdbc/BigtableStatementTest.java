@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -28,6 +29,7 @@ public class BigtableStatementTest {
   @Mock private BigtableDataClient mockDataClient;
   @Mock private BigtableConnection mockConnection;
   @Mock private ResultSet mockResultSet;
+  @Mock private java.sql.ResultSet mockJdbcResultSet;
 
   private AutoCloseable closeable;
 
@@ -54,22 +56,11 @@ public class BigtableStatementTest {
 
   @Test
   public void testCloseWithResults() throws SQLException {
-    com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement mockPreparedStatement =
-        org.mockito.Mockito.mock(
-            com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement.class);
-    BoundStatement.Builder mockBoundStatementBuilder =
-        org.mockito.Mockito.mock(BoundStatement.Builder.class);
-    BoundStatement mockBoundStatement = org.mockito.Mockito.mock(BoundStatement.class);
-
-    when(mockDataClient.prepareStatement(SQL, null)).thenReturn(mockPreparedStatement);
-    when(mockPreparedStatement.bind()).thenReturn(mockBoundStatementBuilder);
-    when(mockBoundStatementBuilder.build()).thenReturn(mockBoundStatement);
-    when(mockDataClient.executeQuery(mockBoundStatement)).thenReturn(mockResultSet);
-
     BigtableStatement statement = createStatement();
-    statement.execute(SQL);
+    statement.resultSets.add(mockJdbcResultSet);
     statement.close();
     assertTrue(statement.isClosed());
+    Mockito.verify(mockJdbcResultSet).close();
   }
 
   @Test
@@ -125,21 +116,23 @@ public class BigtableStatementTest {
 
   @Test
   public void testGetMoreResults() throws SQLException {
-    com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement mockPreparedStatement =
-        org.mockito.Mockito.mock(
-            com.google.cloud.bigtable.data.v2.models.sql.PreparedStatement.class);
-    BoundStatement.Builder mockBoundStatementBuilder =
-        org.mockito.Mockito.mock(BoundStatement.Builder.class);
-    BoundStatement mockBoundStatement = org.mockito.Mockito.mock(BoundStatement.class);
-
-    when(mockDataClient.prepareStatement(SQL, null)).thenReturn(mockPreparedStatement);
-    when(mockPreparedStatement.bind()).thenReturn(mockBoundStatementBuilder);
-    when(mockBoundStatementBuilder.build()).thenReturn(mockBoundStatement);
-    when(mockDataClient.executeQuery(mockBoundStatement)).thenReturn(mockResultSet);
-
     BigtableStatement statement = createStatement();
-    statement.execute(SQL);
+    statement.resultSets.add(mockJdbcResultSet);
+    statement.currentResultIndex = 0;
     assertFalse(statement.getMoreResults());
+  }
+
+  @Test
+  public void testGetMoreResultsWithMultipleResults() throws SQLException {
+    BigtableStatement statement = createStatement();
+    statement.resultSets.add(mockJdbcResultSet);
+    statement.resultSets.add(mockJdbcResultSet);
+    statement.currentResultIndex = 0;
+
+    assertTrue(statement.getMoreResults());
+    assertEquals(1, statement.currentResultIndex);
+    assertFalse(statement.getMoreResults());
+    assertEquals(1, statement.currentResultIndex);
   }
 
   @Test
@@ -236,6 +229,54 @@ public class BigtableStatementTest {
           BigtableStatement statement = createStatement();
           statement.setCursorName("test");
         });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.getFetchDirection();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.getFetchSize();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.getResultSetConcurrency();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.getResultSetType();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.getResultSetHoldability();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.isPoolable();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.isCloseOnCompletion();
+        });
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          BigtableStatement statement = createStatement();
+          statement.getLargeMaxRows();
+        });
   }
 
   @Test
@@ -255,5 +296,26 @@ public class BigtableStatementTest {
     BigtableStatement statement = createStatement();
     java.sql.ResultSet resultSet = statement.executeQuery(SQL);
     assertNotNull(resultSet);
+  }
+
+  @Test
+  public void testWarnings() throws SQLException {
+    BigtableStatement statement = createStatement();
+    assertNull(statement.getWarnings());
+    statement.clearWarnings();
+    assertNull(statement.getWarnings());
+  }
+
+  @Test
+  public void testClosedStatement() throws SQLException {
+    BigtableStatement statement = createStatement();
+    statement.close();
+
+    assertThrows(SQLException.class, () -> statement.execute("SELECT * FROM foo"));
+    assertThrows(SQLException.class, () -> statement.executeQuery("SELECT * FROM foo"));
+    assertThrows(SQLException.class, () -> statement.getResultSet());
+    assertThrows(SQLException.class, () -> statement.getUpdateCount());
+    assertThrows(SQLException.class, () -> statement.getMoreResults());
+    assertThrows(SQLException.class, () -> statement.getConnection());
   }
 }
