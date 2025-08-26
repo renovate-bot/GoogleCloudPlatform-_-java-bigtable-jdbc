@@ -4,7 +4,10 @@ import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,5 +69,39 @@ public class BigtableDriverTest {
   @Test
   public void testJdbcCompliantReturnsFalse() {
     assertFalse(driver.jdbcCompliant());
+  }
+
+  @Test
+  public void testGetPropertyInfo() throws SQLException {
+    String url = "jdbc:bigtable:/projects/test-project/instances/test-instance";
+    Properties info = new Properties();
+    info.setProperty("app_profile_id", "test_profile");
+    DriverPropertyInfo[] properties = driver.getPropertyInfo(url, info);
+    assertEquals(2, properties.length);
+    assertEquals("app_profile_id", properties[0].name);
+    assertEquals("test_profile", properties[0].value);
+    assertEquals("universe_domain", properties[1].name);
+    assertNull(properties[1].value);
+  }
+
+  @Test(expected = SQLFeatureNotSupportedException.class)
+  public void testGetParentLogger() throws SQLFeatureNotSupportedException {
+    driver.getParentLogger();
+  }
+
+  @Test
+  public void testStaticGetters() {
+    assertEquals(1, BigtableDriver.getMajorVersionAsStatic());
+    assertEquals(9, BigtableDriver.getMinorVersionAsStatic());
+    assertEquals("jdbc:bigtable:/", BigtableDriver.getURLPrefix());
+  }
+
+  @Test
+  public void testDriverRegistration() throws SQLException {
+    String validUrl = "jdbc:bigtable:/projects/test-project/instances/test-instance";
+    // The static block in BigtableDriver should have already registered the driver.
+    // We can verify this by trying to get a driver for our URL.
+    Driver registeredDriver = DriverManager.getDriver(validUrl);
+    assertTrue(registeredDriver instanceof BigtableDriver);
   }
 }

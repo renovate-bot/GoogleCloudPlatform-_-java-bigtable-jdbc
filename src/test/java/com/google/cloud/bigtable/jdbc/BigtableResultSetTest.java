@@ -1,16 +1,24 @@
+
 package com.google.cloud.bigtable.jdbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.cloud.bigtable.data.v2.models.sql.ResultSet;
 import com.google.cloud.bigtable.data.v2.models.sql.ResultSetMetadata;
+import com.google.protobuf.ByteString;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -243,6 +251,29 @@ public class BigtableResultSetTest {
   }
 
   @Test
+  public void testGetBytes() throws SQLException {
+    when(mockedBigtableResultSet.next()).thenReturn(true);
+    when(mockedMetadata.getColumnIndex("col1")).thenReturn(0);
+    when(mockedBigtableResultSet.getBytes(0)).thenReturn(ByteString.copyFrom(new byte[] {1, 2, 3}));
+
+    assertTrue(resultSet.next());
+    assertEquals(3, resultSet.getBytes("col1").length);
+    assertFalse(resultSet.wasNull());
+  }
+
+  @Test
+  public void testGetTimestamp() throws SQLException {
+    when(mockedBigtableResultSet.next()).thenReturn(true);
+    when(mockedMetadata.getColumnIndex("col1")).thenReturn(0);
+    Instant now = Instant.now();
+    when(mockedBigtableResultSet.getTimestamp(0)).thenReturn(now);
+
+    assertTrue(resultSet.next());
+    assertEquals(Timestamp.from(now), resultSet.getTimestamp("col1"));
+    assertFalse(resultSet.wasNull());
+  }
+
+  @Test
   public void testClose() throws Exception {
     resultSet.close();
     verify(mockedBigtableResultSet).close();
@@ -281,5 +312,74 @@ public class BigtableResultSetTest {
     when(mockedMetadata.getColumnIndex("invalid"))
         .thenThrow(new RuntimeException("Column not found"));
     resultSet.findColumn("invalid");
+  }
+
+  @Test
+  public void testGetMetaData() throws SQLException {
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertNotNull(metaData);
+    assertTrue(metaData instanceof BigtableResultSetMetaData);
+  }
+
+  @Test
+  public void testGetWarnings() throws SQLException {
+    assertNull(resultSet.getWarnings());
+  }
+
+  @Test
+  public void testClearWarnings() throws SQLException {
+    resultSet.clearWarnings();
+    assertNull(resultSet.getWarnings());
+  }
+
+  @Test
+  public void testIsClosed() throws SQLException {
+    assertFalse(resultSet.isClosed());
+    resultSet.close();
+    assertTrue(resultSet.isClosed());
+  }
+
+  @Test
+  public void testUnsupportedFeatures() {
+    try {
+      resultSet.getBigDecimal(1, 1);
+      fail("Expected SQLFeatureNotSupportedException");
+    } catch (SQLFeatureNotSupportedException e) {
+      // Expected
+    } catch (SQLException e) {
+      fail("Expected SQLFeatureNotSupportedException, but got " + e.getClass().getName());
+    }
+    try {
+      resultSet.getTime(1);
+      fail("Expected SQLFeatureNotSupportedException");
+    } catch (SQLFeatureNotSupportedException e) {
+      // Expected
+    } catch (SQLException e) {
+      fail("Expected SQLFeatureNotSupportedException, but got " + e.getClass().getName());
+    }
+    try {
+      resultSet.getAsciiStream(1);
+      fail("Expected SQLFeatureNotSupportedException");
+    } catch (SQLFeatureNotSupportedException e) {
+      // Expected
+    } catch (SQLException e) {
+      fail("Expected SQLFeatureNotSupportedException, but got " + e.getClass().getName());
+    }
+    try {
+      resultSet.getUnicodeStream(1);
+      fail("Expected SQLFeatureNotSupportedException");
+    } catch (SQLFeatureNotSupportedException e) {
+      // Expected
+    } catch (SQLException e) {
+      fail("Expected SQLFeatureNotSupportedException, but got " + e.getClass().getName());
+    }
+    try {
+      resultSet.getBinaryStream(1);
+      fail("Expected SQLFeatureNotSupportedException");
+    } catch (SQLFeatureNotSupportedException e) {
+      // Expected
+    } catch (SQLException e) {
+      fail("Expected SQLFeatureNotSupportedException, but got " + e.getClass().getName());
+    }
   }
 }

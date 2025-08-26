@@ -999,7 +999,7 @@ public class BigtableResultSet implements java.sql.ResultSet {
 
   @Override
   public boolean isClosed() throws SQLException {
-    throw new SQLFeatureNotSupportedException(" is not supported");
+    return closed;
   }
 
   @Override

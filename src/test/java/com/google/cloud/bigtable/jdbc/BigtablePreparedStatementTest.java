@@ -1,3 +1,4 @@
+
 package com.google.cloud.bigtable.jdbc;
 
 import static org.junit.Assert.assertEquals;
@@ -69,6 +70,12 @@ public class BigtablePreparedStatementTest {
   public void testSetString() throws SQLException {
     PreparedStatement statement = createStatement();
     statement.setString(1, "test");
+  }
+
+  @Test
+  public void testSetByte() throws SQLException {
+    PreparedStatement statement = createStatement();
+    statement.setByte(1, (byte) 1);
   }
 
   @Test
