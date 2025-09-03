@@ -34,12 +34,18 @@ public class BigtableClientFactoryImpl implements IBigtableClientFactory {
   }
 
   public BigtableDataClient createBigtableDataClient(
-      String projectId, String instanceId, String appProfileId) throws IOException {
-    BigtableDataSettings.Builder builder =
-        BigtableDataSettings.newBuilder()
-            .setProjectId(projectId)
-            .setInstanceId(instanceId)
-            .setCredentialsProvider(FixedCredentialsProvider.create(credentials));
+      String projectId, String instanceId, String appProfileId, String host, int port)
+      throws IOException {
+    BigtableDataSettings.Builder builder;
+    if (host != null && (host.equals("localhost") || host.equals("127.0.0.1")) && port != -1) {
+      builder = BigtableDataSettings.newBuilderForEmulator(port);
+    } else {
+      builder = BigtableDataSettings.newBuilder()
+          .setCredentialsProvider(FixedCredentialsProvider.create(credentials));
+    }
+    builder
+        .setProjectId(projectId)
+        .setInstanceId(instanceId);
 
     if (appProfileId != null) {
       builder.setAppProfileId(appProfileId);
@@ -49,6 +55,10 @@ public class BigtableClientFactoryImpl implements IBigtableClientFactory {
         .stubSettings()
         .setHeaderProvider(FixedHeaderProvider.create("user-agent", "bigtable-jdbc/1.0.0"));
 
+    // Known issue: BigtableDataClient cannot now whether a connection is established unless
+    // a table name is specified. The check would leverage `sampleRowKeys(tableId)`, which will
+    // throw an exception if connection fails.
+    // For now, a connection will always be "valid" until a query is called.
     return BigtableDataClient.create(builder.build());
   }
 }

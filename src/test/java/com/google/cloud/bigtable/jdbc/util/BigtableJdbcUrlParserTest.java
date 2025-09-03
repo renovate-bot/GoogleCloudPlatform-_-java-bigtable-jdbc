@@ -115,4 +115,62 @@ public class BigtableJdbcUrlParserTest {
     ImmutableMap<String, String> expectedParams = ImmutableMap.of("param", "");
     assertEquals(expectedParams, parsedUrl.getQueryParameters());
   }
+
+  @Test
+  public void testParseUrlWithEmptyProjectId() {
+    String url = "jdbc:bigtable:/projects//instances/my-instance";
+    assertThrows(IllegalArgumentException.class, () -> BigtableJdbcUrlParser.parse(url));
+  }
+
+  @Test
+  public void testParseUrlWithEmptyInstanceId() {
+    String url = "jdbc:bigtable:/projects/my-project/instances/";
+    assertThrows(IllegalArgumentException.class, () -> BigtableJdbcUrlParser.parse(url));
+  }
+
+  @Test
+  public void testParseUrlWithMalformedPath() {
+    String url = "jdbc:bigtable:/projects/my-project/my-instance";
+    assertThrows(IllegalArgumentException.class, () -> BigtableJdbcUrlParser.parse(url));
+  }
+
+  @Test
+  public void testParseUrlWithHostAndPort() throws URISyntaxException {
+    String url = "jdbc:bigtable://localhost:8086/projects/my-project/instances/my-instance";
+    BigtableJdbcUrl parsedUrl = BigtableJdbcUrlParser.parse(url);
+
+    assertNotNull(parsedUrl);
+    assertEquals("my-project", parsedUrl.getProjectId());
+    assertEquals("my-instance", parsedUrl.getInstanceId());
+    assertEquals("localhost", parsedUrl.getHost());
+    assertEquals(8086, parsedUrl.getPort());
+    assertTrue(parsedUrl.getQueryParameters().isEmpty());
+  }
+
+  @Test
+  public void testParseUrlWithHostAndNoPort() throws URISyntaxException {
+    String url = "jdbc:bigtable://localhost/projects/my-project/instances/my-instance";
+    BigtableJdbcUrl parsedUrl = BigtableJdbcUrlParser.parse(url);
+
+    assertNotNull(parsedUrl);
+    assertEquals("my-project", parsedUrl.getProjectId());
+    assertEquals("my-instance", parsedUrl.getInstanceId());
+    assertEquals("localhost", parsedUrl.getHost());
+    assertEquals(-1, parsedUrl.getPort());
+    assertTrue(parsedUrl.getQueryParameters().isEmpty());
+  }
+
+  @Test
+  public void testParseUrlWithHostPortAndParams() throws URISyntaxException {
+    String url =
+        "jdbc:bigtable://localhost:8086/projects/my-project/instances/my-instance?param1=val1";
+    BigtableJdbcUrl parsedUrl = BigtableJdbcUrlParser.parse(url);
+
+    assertNotNull(parsedUrl);
+    assertEquals("my-project", parsedUrl.getProjectId());
+    assertEquals("my-instance", parsedUrl.getInstanceId());
+    assertEquals("localhost", parsedUrl.getHost());
+    assertEquals(8086, parsedUrl.getPort());
+    assertEquals(ImmutableMap.of("param1", "val1"), parsedUrl.getQueryParameters());
+  }
 }

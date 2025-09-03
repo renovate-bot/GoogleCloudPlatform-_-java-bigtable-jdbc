@@ -45,6 +45,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 public class BigtableConnection implements Connection {
+  private final int DEFAULT_PORT = 443;
+
   private Map<String, Class<?>> typeMap = new HashMap<>();
   // The actual client, responsible for operations and communicates with Bigtable.
   private final BigtableDataClient client;
@@ -71,18 +73,21 @@ public class BigtableConnection implements Connection {
     }
   }
 
-  public BigtableConnection(
-      String url,
-      Properties info,
-      BigtableDataClient dataClient,
-      IBigtableClientFactory bigtableClientFactory)
-      throws SQLException {
+  public BigtableConnection(String url, Properties info, BigtableDataClient dataClient,
+      IBigtableClientFactory bigtableClientFactory) throws SQLException {
     this.bigtableClientFactory = bigtableClientFactory;
     try {
       BigtableJdbcUrlParser.BigtableJdbcUrl parsedUrl = BigtableJdbcUrlParser.parse(url);
       Properties urlParams = new Properties();
       urlParams.setProperty("projectId", parsedUrl.getProjectId());
       urlParams.setProperty("instanceId", parsedUrl.getInstanceId());
+      if (parsedUrl.getHost() != null) {
+        urlParams.setProperty("host", parsedUrl.getHost());
+      }
+      if (parsedUrl.getPort() != -1) {
+        urlParams.setProperty("port", String.valueOf(parsedUrl.getPort()));
+      }
+
       for (Map.Entry<String, String> entry : parsedUrl.getQueryParameters().entrySet()) {
         String key = entry.getKey();
         if (!SUPPORTED_KEYS.contains(key)) {
@@ -116,8 +121,11 @@ public class BigtableConnection implements Connection {
     String projectId = properties.getProperty("projectId");
     String instanceId = properties.getProperty("instanceId");
     String appProfileId = properties.getProperty("app_profile_id");
+    String host = properties.getProperty("host");
+    int port = Integer.parseInt(properties.getProperty("port", String.valueOf(DEFAULT_PORT)));
 
-    return this.bigtableClientFactory.createBigtableDataClient(projectId, instanceId, appProfileId);
+    return this.bigtableClientFactory.createBigtableDataClient(projectId, instanceId, appProfileId,
+        host, port);
   }
 
   private void checkClosed() throws SQLException {

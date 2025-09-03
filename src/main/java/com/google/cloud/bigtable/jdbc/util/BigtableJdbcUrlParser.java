@@ -94,10 +94,13 @@ public class BigtableJdbcUrlParser {
     String projectId = matcher.group(1);
     String instanceId = matcher.group(2);
 
+    String host = internalUri.getHost();
+    int port = internalUri.getPort();
+
     // Extract query parameters
     ImmutableMap<String, String> queryParameters = parseQueryParameters(internalUri.getQuery());
 
-    return new BigtableJdbcUrl(projectId, instanceId, queryParameters);
+    return new BigtableJdbcUrl(projectId, instanceId, host, port, queryParameters);
   }
 
   private static ImmutableMap<String, String> parseQueryParameters(String query) {
@@ -125,12 +128,20 @@ public class BigtableJdbcUrlParser {
   public static class BigtableJdbcUrl {
     private final String projectId;
     private final String instanceId;
+    private final String host;
+    private final int port;
     private final ImmutableMap<String, String> queryParameters;
 
     public BigtableJdbcUrl(
-        String projectId, String instanceId, ImmutableMap<String, String> queryParameters) {
+        String projectId,
+        String instanceId,
+        String host,
+        int port,
+        ImmutableMap<String, String> queryParameters) {
       this.projectId = projectId;
       this.instanceId = instanceId;
+      this.host = host;
+      this.port = port;
       this.queryParameters = queryParameters;
     }
 
@@ -142,6 +153,14 @@ public class BigtableJdbcUrlParser {
       return instanceId;
     }
 
+    public String getHost() {
+      return host;
+    }
+
+    public int getPort() {
+      return port;
+    }
+
     /** Returns the query parameters. */
     public ImmutableMap<String, String> getQueryParameters() {
       return queryParameters;
@@ -150,8 +169,8 @@ public class BigtableJdbcUrlParser {
     @Override
     public String toString() {
       return String.format(
-          "BigtableJdbcUrl{projectId='%s', instanceId='%s', queryParameters=%s}",
-          projectId, instanceId, queryParameters);
+          "BigtableJdbcUrl{projectId='%s', instanceId='%s', host='%s', port=%d, queryParameters=%s}",
+          projectId, instanceId, host, port, queryParameters);
     }
   }
 }
