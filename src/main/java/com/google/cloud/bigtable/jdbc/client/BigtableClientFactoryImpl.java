@@ -33,9 +33,13 @@ public class BigtableClientFactoryImpl implements IBigtableClientFactory {
 
   private synchronized Credentials getCredentials() throws IOException {
     if (credentials == null) {
-      credentials = GoogleCredentials.getApplicationDefault();
+      credentials = loadDefaultCredentials();
     }
     return credentials;
+  }
+
+  protected Credentials loadDefaultCredentials() throws IOException {
+    return GoogleCredentials.getApplicationDefault();
   }
 
   public BigtableDataClient createBigtableDataClient(
@@ -46,7 +50,7 @@ public class BigtableClientFactoryImpl implements IBigtableClientFactory {
       builder = BigtableDataSettings.newBuilderForEmulator(port);
     } else {
       builder = BigtableDataSettings.newBuilder()
-          .setCredentialsProvider(FixedCredentialsProvider.create(credentials));
+          .setCredentialsProvider(FixedCredentialsProvider.create(getCredentials()));
     }
     builder
         .setProjectId(projectId)

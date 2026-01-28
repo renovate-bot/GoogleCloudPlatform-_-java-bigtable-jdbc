@@ -88,4 +88,40 @@ public class BigtableClientFactoryImplTest {
       // This is expected to fail without real credentials, but a null pointer exception would indicate a problem.
     }
   }
+
+  @Test
+  public void testLazyLoadCredentials() throws IOException {
+    final Credentials mockCredentials = mock(Credentials.class);
+    final int[] loadCount = {0};
+    
+    BigtableClientFactoryImpl factory = new BigtableClientFactoryImpl() {
+      @Override
+      protected Credentials loadDefaultCredentials() throws IOException {
+        loadCount[0]++;
+        return mockCredentials;
+      }
+    };
+    
+    // First call should trigger load
+    try {
+      factory.createBigtableDataClient("test-project", "test-instance", null, "bigtable.googleapis.com", 443);
+    } catch (Exception e) {
+      // Expected to fail with mock credentials
+    }
+    assertEquals(1, loadCount[0]);
+    
+    // Second call should NOT trigger load again
+    try {
+      factory.createBigtableDataClient("test-project", "test-instance", null, "bigtable.googleapis.com", 443);
+    } catch (Exception e) {
+      // Expected to fail with mock credentials
+    }
+    assertEquals(1, loadCount[0]);
+  }
+
+  @Test
+  public void testDefaultConstructor() {
+    BigtableClientFactoryImpl factory = new BigtableClientFactoryImpl();
+    assertNotNull(factory);
+  }
 }
