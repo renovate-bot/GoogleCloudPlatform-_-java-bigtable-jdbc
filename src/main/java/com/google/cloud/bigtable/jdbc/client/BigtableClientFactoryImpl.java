@@ -14,23 +14,28 @@
 
 package com.google.cloud.bigtable.jdbc.client;
 
+import java.io.IOException;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigtable.data.v2.BigtableDataClient;
 import com.google.cloud.bigtable.data.v2.BigtableDataSettings;
-import java.io.IOException;
 
 public class BigtableClientFactoryImpl implements IBigtableClientFactory {
-  private final Credentials credentials;
+  private Credentials credentials;
 
-  public BigtableClientFactoryImpl() throws IOException {
-    this.credentials = GoogleCredentials.getApplicationDefault();
-  }
+  public BigtableClientFactoryImpl() {}
 
   public BigtableClientFactoryImpl(Credentials credentials) {
     this.credentials = credentials;
+  }
+
+  private synchronized Credentials getCredentials() throws IOException {
+    if (credentials == null) {
+      credentials = GoogleCredentials.getApplicationDefault();
+    }
+    return credentials;
   }
 
   public BigtableDataClient createBigtableDataClient(

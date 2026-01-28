@@ -66,11 +66,7 @@ public class BigtableConnection implements Connection {
   }
 
   private static IBigtableClientFactory createClientFactory() throws SQLException {
-    try {
-      return new BigtableClientFactoryImpl();
-    } catch (IOException e) {
-      throw new SQLException("Failed to create BigtableClientFactory", e);
-    }
+    return new BigtableClientFactoryImpl();
   }
 
   public BigtableConnection(String url, Properties info, BigtableDataClient dataClient,
@@ -113,7 +109,7 @@ public class BigtableConnection implements Connection {
     } catch (java.net.URISyntaxException | IllegalArgumentException e) {
       throw new SQLException("Malformed JDBC URL: " + url, e);
     } catch (Exception e) {
-      throw new SQLException("Failed to connect to Bigtable", e);
+      throw new SQLException("Failed to connect to Bigtable: " + e.getMessage(), e);
     }
   }
 
@@ -130,7 +126,7 @@ public class BigtableConnection implements Connection {
 
   private void checkClosed() throws SQLException {
     if (isClosed) {
-      throw new SQLException("This Statement is already closed.");
+      throw new SQLException("This Connection is already closed.");
     }
   }
 
