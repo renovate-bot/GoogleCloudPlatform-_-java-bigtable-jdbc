@@ -43,7 +43,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>4.13.2</junit.version>
     <mockito.version>3.12.4</mockito.version>
-    <jacoco.version>0.8.14</jacoco.version>
+    <jacoco.version>0.8.15</jacoco.version>
     <skipUnitTests>false</skipUnitTests>
     <skipITs>true</skipITs>
   </properties>
